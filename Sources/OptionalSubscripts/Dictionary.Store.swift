@@ -2,6 +2,11 @@
 // github.com/screensailor 2021
 //
 
+public extension Dictionary {
+	
+	typealias Store = DictionaryStore<Key, Value>
+}
+
 @MinorActor public class DictionaryStore<Key: Hashable, Value> {
 	
 	public typealias BatchUpdates = [(Key, Value?)]
@@ -23,12 +28,7 @@
 	}
 }
 
-public extension Dictionary {
-    
-    typealias Store = DictionaryStore<Key, Value>
-}
-
-public extension DictionaryStore {
+@MinorActor public extension DictionaryStore {
     
     typealias BufferingPolicy = AsyncStream<Value?>.Continuation.BufferingPolicy
 
@@ -59,7 +59,7 @@ public extension DictionaryStore {
     }
 }
 
-public extension DictionaryStore {
+@MinorActor public extension DictionaryStore {
     
     var isInTransaction: Bool {
         transactionLevel > 0
@@ -100,7 +100,7 @@ public extension DictionaryStore {
     }
 }
 
-public extension DictionaryStore {
+@MinorActor public extension DictionaryStore {
     
     func get(_ key: Key) throws -> Value {
         guard let o = dictionary[key] else {
@@ -118,7 +118,7 @@ public extension DictionaryStore {
     }
 }
 
-public extension DictionaryStore {
+@MinorActor public extension DictionaryStore {
     
     @inlinable subscript<A>(_ key: Key, as a: A.Type = A.self) -> A {
         get throws {

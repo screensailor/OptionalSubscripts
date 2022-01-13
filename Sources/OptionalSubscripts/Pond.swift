@@ -5,61 +5,63 @@
 import Dispatch // TODO: #if canImport
 
 public extension Optional where Wrapped == Any {
-    
-    actor Pond<Source> where Source: Geyser {
 
-        public let source: Source
-        public let store: Optional<Any>.Store
-        
-        public private(set) var cancellingGracePeriodInNanoseconds: UInt64 = 0
-        public private(set) var sourceIDs: [Route: Source.GushID] = [:]
-        public private(set) var gushSources: [Source.GushID: GushSource] = [:]
-
-        public class GushSource {
-            
-            public fileprivate(set) var pendingContinuations: [PendingContinuation]?
-            public fileprivate(set) var cancelTimestamp: DispatchTime?
-            public fileprivate(set) var referenceCount: UInt = 0
-            
-            let task: Task<(), Error>
-            
-            init(task: Task<(), Error>, pending: PendingContinuation) {
-                self.task = task
-                self.pendingContinuations = [pending]
-            }
-        }
-
-        public struct PendingContinuation {
-            
-            public let route: Route
-            public let limit: BufferingPolicy
-            
-            let continuation: Continuation
-        }
-        
-        public typealias Continuation = AsyncStream<AsyncStream<Any?>>.Continuation
-
-        public init(source: Source, store: Optional<Any>.Store = .init()) {
-            self.source = source
-            self.store = store
-        }
-    }
+	typealias Pond = OptionalSubscripts.Pond
 }
 
-public extension Optional.Pond where Wrapped == Any {
+public extension Pond {
+	
+	typealias Route = Optional<Any>.Route
+	typealias Location = Optional<Any>.Location
+	
+	typealias Stream = AsyncFlatMapSequence<AsyncStream<AsyncStream<Any?>>, AsyncStream<Any?>>
+	typealias BufferingPolicy = AsyncStream<Any?>.Continuation.BufferingPolicy
+}
+
+@MinorActor public class Pond<Source> where Source: Geyser {
+	
+	public let source: Source
+	public let store: Optional<Any>.Store
+	
+	public private(set) var cancellingGracePeriodInNanoseconds: UInt64 = 0
+	public private(set) var sourceIDs: [Route: Source.GushID] = [:]
+	public private(set) var gushSources: [Source.GushID: GushSource] = [:]
+	
+	public class GushSource {
+		
+		public fileprivate(set) var pendingContinuations: [PendingContinuation]?
+		public fileprivate(set) var cancelTimestamp: DispatchTime?
+		public fileprivate(set) var referenceCount: UInt = 0
+		
+		let task: Task<(), Error>
+		
+		init(task: Task<(), Error>, pending: PendingContinuation) {
+			self.task = task
+			self.pendingContinuations = [pending]
+		}
+	}
+	
+	public struct PendingContinuation {
+		
+		public let route: Route
+		public let limit: BufferingPolicy
+		
+		let continuation: Continuation
+	}
+	
+	public typealias Continuation = AsyncStream<AsyncStream<Any?>>.Continuation
+	
+	nonisolated public init(source: Source, store: Optional<Any>.Store = .init()) {
+		self.source = source
+		self.store = store
+	}
+}
+
+@MinorActor public extension Pond {
     
     func setCancellingGracePeriod(to seconds: Double) {
         cancellingGracePeriodInNanoseconds = UInt64(max(0, seconds * 1_000_000_000))
     }
-}
-
-public extension Optional.Pond where Wrapped == Any {
-    
-    typealias Route = Optional<Any>.Route
-    typealias Location = Optional<Any>.Location
-    
-    typealias Stream = AsyncFlatMapSequence<AsyncStream<AsyncStream<Any?>>, AsyncStream<Any?>>
-    typealias BufferingPolicy = AsyncStream<Any?>.Continuation.BufferingPolicy
 
     @inlinable nonisolated func stream(_ route: Location..., bufferingPolicy: BufferingPolicy = .bufferingNewest(1)) -> Stream {
         stream(route, bufferingPolicy: bufferingPolicy)
@@ -74,7 +76,7 @@ public extension Optional.Pond where Wrapped == Any {
     }
 }
 
-private extension Optional.Pond where Wrapped == Any {
+private extension Pond {
     
     func stream<Route>(_ route: Route, to continuation: Continuation, limit: BufferingPolicy) async throws where Route: Collection, Route.Index == Int, Route.Element == Location {
         
@@ -106,7 +108,7 @@ private extension Optional.Pond where Wrapped == Any {
             default:
                 let task = Task {
                     for try await gush in await source.stream(src.id) {
-                        await store.set(src.route, to: gush)
+                        store.set(src.route, to: gush)
                         guard let gushSource = gushSources[src.id] else {
                             assertionFailure("Missing gush source \(src.id)")
                             return
@@ -132,7 +134,7 @@ private extension Optional.Pond where Wrapped == Any {
         let stream = AsyncStream<Any?>{ continuation in
             count(for: source, of: +1)
             let task = Task {
-                for await o in await store.stream(route, bufferingPolicy: limit) {
+                for await o in store.stream(route, bufferingPolicy: limit) {
                     continuation.yield(o)
                 }
             }

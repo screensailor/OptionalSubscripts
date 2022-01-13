@@ -10,9 +10,7 @@ final class OptionalSubscripts™: Hopes {
 	
 	private var bag: Set<AnyCancellable> = []
 	
-	@G let a = _A()
-
-	func test_some_thoughts() async throws {
+	func test_some_thoughts_about_data_races() async throws {
 		
 		let a = await A()
 		let n = Counter()
@@ -48,7 +46,6 @@ final class OptionalSubscripts™: Hopes {
 	@inlinable func increment() {
 		_a.increment()
 	}
-
 }
 
 class _A {

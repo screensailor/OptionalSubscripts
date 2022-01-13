@@ -5,9 +5,9 @@
 #if canImport(Combine)
 import Combine
 
-extension AsyncSequence {
+public extension AsyncSequence {
     
-    @usableFromInline func publisher() -> AnyPublisher<Element, Never> {
+    func publisher() -> AnyPublisher<Element, Never> {
         let o = PassthroughSubject<Element, Never>()
         var task: Task<(), Error>?
         return o.handleEvents(
@@ -31,8 +31,7 @@ extension AsyncSequence {
     }
 }
 
-
-public extension Optional.Pond where Wrapped == Any {
+public extension Pond {
 
     @inlinable func publisher(for route: Location..., bufferingPolicy: BufferingPolicy = .bufferingNewest(1)) -> AnyPublisher<Any?, Never> {
         stream(route, bufferingPolicy: bufferingPolicy).publisher()
@@ -43,7 +42,7 @@ public extension Optional.Pond where Wrapped == Any {
     }
 }
 
-public extension Optional.Store where Wrapped == Any {
+public extension OptionalStore {
 
     @inlinable func publisher(for route: Location..., bufferingPolicy: BufferingPolicy = .bufferingNewest(1)) -> AnyPublisher<Any?, Never> {
         stream(route, bufferingPolicy: bufferingPolicy).publisher()

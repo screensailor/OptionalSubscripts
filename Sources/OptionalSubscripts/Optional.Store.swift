@@ -3,32 +3,41 @@
 //
 
 public extension Optional where Wrapped == Any {
-    
-    actor Store {
-        
-        public typealias BatchUpdates = [(Route, Any?)]
-        public typealias TransactionLevel = UInt
-        
-        public var data: Any?
-        
-        public private(set) var transactionLevel: TransactionLevel = 0
-        public private(set) var transactionUpdates: [TransactionLevel: BatchUpdates] = [:]
-
-        typealias ID = UInt
-        typealias Subject = [ID: AsyncStream<Any?>.Continuation]
-        
-        var count: UInt = 0
-        var subscriptions = Tree<Location, Subject>()
-        
-        public init(_ data: Any? = nil) {
-            self.data = data
-        }
-    }
+	
+	typealias Store = OptionalStore
 }
 
-public extension Optional.Store where Wrapped == Any {
-    
-    typealias BufferingPolicy = AsyncStream<Any?>.Continuation.BufferingPolicy
+public extension OptionalStore {
+
+	typealias Route = Optional<Any>.Route
+	typealias Location = Optional<Any>.Location
+	typealias KeyPath = Optional<Any>.KeyPath
+	
+	typealias BatchUpdates = [(Route, Any?)]
+	typealias TransactionLevel = UInt
+	
+	typealias BufferingPolicy = AsyncStream<Any?>.Continuation.BufferingPolicy
+}
+
+@MinorActor public class OptionalStore {
+	
+	public var data: Any?
+	
+	public private(set) var transactionLevel: TransactionLevel = 0
+	public private(set) var transactionUpdates: [TransactionLevel: BatchUpdates] = [:]
+
+	typealias ID = UInt
+	typealias Subject = [ID: AsyncStream<Any?>.Continuation]
+	
+	var count: UInt = 0
+	var subscriptions = Tree<Location, Subject>()
+	
+	nonisolated public init(_ data: Any? = nil) {
+		self.data = data
+	}
+}
+
+@MinorActor public extension OptionalStore {
 
     @inlinable func stream(_ route: Location..., bufferingPolicy: BufferingPolicy = .bufferingNewest(1)) -> AsyncStream<Any?> {
         stream(route, bufferingPolicy: bufferingPolicy)
@@ -39,8 +48,11 @@ public extension Optional.Store where Wrapped == Any {
             self.insert(continuation, for: route)
         }
     }
+}
 
-    private func insert<Route>(_ continuation: AsyncStream<Any?>.Continuation, for route: Route) where Route: Collection, Route.Index == Int, Route.Element == Location {
+private extension OptionalStore {
+	
+    func insert<Route>(_ continuation: AsyncStream<Any?>.Continuation, for route: Route) where Route: Collection, Route.Index == Int, Route.Element == Location {
         continuation.yield(data[route])
         self.count += 1
         let id = self.count
@@ -53,7 +65,7 @@ public extension Optional.Store where Wrapped == Any {
         }
     }
 
-    private func remove<Route>(continuation id: ID, for route: Route) where Route: Collection, Route.Index == Int, Route.Element == Location {
+    func remove<Route>(continuation id: ID, for route: Route) where Route: Collection, Route.Index == Int, Route.Element == Location {
         subscriptions[route]?[id] = nil
         if subscriptions[route]?.isEmpty == true {
             subscriptions[route] = Subject?.none
@@ -61,7 +73,7 @@ public extension Optional.Store where Wrapped == Any {
     }
 }
 
-public extension Optional.Store where Wrapped == Any {
+@MinorActor public extension OptionalStore {
 
     var isInTransaction: Bool {
         transactionLevel > 0
@@ -104,7 +116,7 @@ public extension Optional.Store where Wrapped == Any {
     }
 }
 
-public extension Optional.Store where Wrapped == Any {
+@MinorActor public extension OptionalStore {
 
     @inlinable func set(_ route: Location..., to value: Any?) {
         set(route, to: value)
@@ -119,7 +131,7 @@ public extension Optional.Store where Wrapped == Any {
     }
 }
 
-extension Optional.Store where Wrapped == Any {
+private extension OptionalStore {
     
     func didSet<Route>(_ route: Route, to value: Any?) where Route: Collection, Route.Index == Int, Route.Element == Location {
         for route in route.lineage.reversed() {
@@ -139,11 +151,7 @@ extension Optional.Store where Wrapped == Any {
     }
 }
 
-public extension Optional.Store where Wrapped == Any {
-    
-    typealias Route = Optional<Any>.Route
-    typealias Location = Optional<Any>.Location
-    typealias KeyPath = Optional<Any>.KeyPath
+@MinorActor public extension OptionalStore {
     
     @inlinable subscript<A>(_ route: Location..., as type: A.Type = A.self) -> A {
         get throws {
@@ -172,7 +180,7 @@ public extension Optional.Store where Wrapped == Any {
     }
 }
 
-public extension Optional.Store where Wrapped == Any {
+public extension OptionalStore {
     
     enum Error: Swift.Error {
         case nilAt(route: Route)
