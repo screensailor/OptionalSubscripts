@@ -54,7 +54,7 @@ public extension Optional.Store where Wrapped == Any {
     }
 }
 
-public extension Dictionary.Store {
+public extension DictionaryStore {
 
     @inlinable func publisher(for key: Key, bufferingPolicy: BufferingPolicy = .bufferingNewest(1)) -> AnyPublisher<Value?, Never> {
         stream(key, bufferingPolicy: bufferingPolicy).publisher()

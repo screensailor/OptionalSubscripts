@@ -10,11 +10,11 @@ final class Location™: Hopes {
         
         o = 5
 
-        hope(o.index) == 5
+        hope(o) == 5
 
         o = "👋"
 
-        hope(o.key) == "👋"
+        hope(o) == "👋"
     }
     
     func test_comparable() {

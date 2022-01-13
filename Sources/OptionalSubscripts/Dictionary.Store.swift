@@ -2,29 +2,33 @@
 // github.com/screensailor 2021
 //
 
-public extension Dictionary {
-    
-    actor Store {
-        
-        public typealias BatchUpdates = [(Key, Value?)]
-        public typealias TransactionLevel = UInt
+@MinorActor public class DictionaryStore<Key: Hashable, Value> {
+	
+	public typealias BatchUpdates = [(Key, Value?)]
+	public typealias TransactionLevel = UInt
 
-        public var dictionary: Dictionary
-        
-        typealias ID = UInt
-        typealias Subject = [ID: AsyncStream<Value?>.Continuation]
+	public var dictionary: [Key: Value]
+	
+	typealias ID = UInt
+	typealias Subject = [ID: AsyncStream<Value?>.Continuation]
 
-        var count: UInt = 0
-        var subscriptions: [Key: Subject] = [:]
+	var count: UInt = 0
+	var subscriptions: [Key: Subject] = [:]
 
-        public private(set) var transactionLevel: TransactionLevel = 0
-        public private(set) var transactionUpdates: [TransactionLevel: BatchUpdates] = [:]
+	public private(set) var transactionLevel: TransactionLevel = 0
+	public private(set) var transactionUpdates: [TransactionLevel: BatchUpdates] = [:]
 
-        public init(_ dictionary: Dictionary = [:]) { self.dictionary = dictionary }
-    }
+	nonisolated public init(_ dictionary: [Key: Value] = [:]) {
+		self.dictionary = dictionary
+	}
 }
 
-public extension Dictionary.Store {
+public extension Dictionary {
+    
+    typealias Store = DictionaryStore<Key, Value>
+}
+
+public extension DictionaryStore {
     
     typealias BufferingPolicy = AsyncStream<Value?>.Continuation.BufferingPolicy
 
@@ -55,13 +59,13 @@ public extension Dictionary.Store {
     }
 }
 
-public extension Dictionary.Store {
+public extension DictionaryStore {
     
     var isInTransaction: Bool {
         transactionLevel > 0
     }
 
-    func transaction(_ updates: (Dictionary.Store) async throws -> ()) async rethrows {
+    func transaction(_ updates: (DictionaryStore) async throws -> ()) async rethrows {
         transactionLevel += 1
         do {
             try await updates(self)
@@ -96,7 +100,7 @@ public extension Dictionary.Store {
     }
 }
 
-public extension Dictionary.Store {
+public extension DictionaryStore {
     
     func get(_ key: Key) throws -> Value {
         guard let o = dictionary[key] else {
@@ -114,7 +118,7 @@ public extension Dictionary.Store {
     }
 }
 
-public extension Dictionary.Store {
+public extension DictionaryStore {
     
     @inlinable subscript<A>(_ key: Key, as a: A.Type = A.self) -> A {
         get throws {
@@ -133,7 +137,7 @@ public extension Dictionary.Store {
     }
 }
 
-public extension Dictionary.Store {
+public extension DictionaryStore {
     
     enum Error: Swift.Error {
         case nilAt(key: Key)

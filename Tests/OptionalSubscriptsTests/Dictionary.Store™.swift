@@ -6,23 +6,24 @@ import Combine
 
 final class DictionaryStore™: Hopes {
     
+	@MinorActor
     func test_stream() async throws {
         
         let o = [String: String].Store(["heart": "?"])
         
     forloop:
-        for await heart in await o.stream("heart") {
+        for await heart in o.stream("heart") {
             switch heart
             {
             case "?":
-                await o.set("heart", to: "❤️")
+                o.set("heart", to: "❤️")
                 
             case "❤️":
-                await o.set("heart", to: "💛")
+                o.set("heart", to: "💛")
                 
             case "💛":
-                await o.set("fart",  to: "😱")
-                await o.set("heart", to: "💚")
+                o.set("fart",  to: "😱")
+                o.set("heart", to: "💚")
                 
             case "💚":
                 break forloop
@@ -32,11 +33,11 @@ final class DictionaryStore™: Hopes {
                 break forloop
             }
         }
-        
-        await hope(that: o.dictionary) == [
-            "heart": "💚",
-            "fart": "😱"
-        ]
+		
+		try hope(that: o.get("heart")) == "💚"
+		try hope(that: o.get("fart")) == "😱"
+
+		hope(that: o.dictionary.count) == 2
     }
     
     func test_publisher() async throws {

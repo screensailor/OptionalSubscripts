@@ -67,7 +67,7 @@ public extension Optional.Store where Wrapped == Any {
         transactionLevel > 0
     }
     
-    func transaction(_ updates: (Optional<Any>.Store) async throws -> ()) async rethrows {
+    func transaction(_ updates: (Optional<Any>.Store) async throws -> ()) async rethrows { // TODO: add a sync version
         transactionLevel += 1
         do {
             try await updates(self)
